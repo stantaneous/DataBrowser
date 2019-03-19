@@ -1,3 +1,4 @@
-flask
 pyodbc
 pandas
+flask
+flask-WTF
