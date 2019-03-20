@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<title>Data Browser</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="/static/layout.css">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Raleway">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<style>
+    body,
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        font-family: "Raleway", sans-serif
+    }
+
+</style>
+
+<body class="light-grey content" style="max-width:1600px">
+
+<!-- DataBase Sources -->
+<nav class="sidebar collapse white animate-left" style="z-index:3;width:300px;" id="mySidebar"><br>
+    <div class="container">
+        <a href="#" onclick="sidebar_close()" class="hide-large right jumbo padding hover-grey"
+           title="close menu">
+            <i class="fa fa-remove"></i>
+        </a>
+        <h4><b>Database Source</b></h4>
+    </div>
+    <div class="bar-block">
+        {% for conn in connectors %}
+        <a href="#" onclick="sidebar_close()" id="connector{{loop.index}}"
+           class="bar-item button padding text-teal" data-toggle="modal"
+           data-target="#modal{{loop.index}}"> <i
+                class="fa fa-th-large fa-fw margin-right"></i>{{ conn }}</a>
+        {% endfor %}
+    </div>
+</nav>
+
+
+<!-- Overlay effect when opening sidebar on small screens -->
+<div class="overlay hide-large animate-opacity" onclick="sidebar_close()" style="cursor:pointer"
+     title="close side menu" id="myOverlay"></div>
+
+<!--  Modal for form  !-->
+{% for conn in connectors %}
+<div class="modal fade" id="modal{{loop.index}}" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4>Enter Server Credentials </h4>
+            </div>
+            <div class="modal-body">
+                <form role="form" id="form{{loop.index}}">
+                    <div class="form-group">
+                        <label for="server">Server:</label>
+                        <input type="text" class="form-control" id="server" name="server"
+                               placeholder="server" value="{{conn}}">
+                        <br>
+                        <label for="servername">Server Address:</label>
+                        <input type="text" class="form-control" id="servername" name="servername"
+                               placeholder="servername">
+                        <br>
+                        <label for="username">User Name:</label>
+                        <input type="text" class="form-control" id="username" name="username" placeholder="username">
+                        <br>
+                        <label for="password">Password:</label>
+                        <input type="password" class="form-control" id="password" name="password"
+                               placeholder="Enter a password.">
+                        <br>
+                        {{ form.csrf_token }}
+                        <center>
+                            <button type="submit" class="btn btn-success"
+                                    onclick="return server_connect('#form{{loop.index}}', '#modal{{loop.index}}')">
+                                Connect
+                            </button>
+                        </center>
+                        <div id="error_messages"></div>
+                    </div>
+
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endfor %}
+<!-- !PAGE CONTENT! -->
+<div class="main" style="margin-left:300px">
+    <header>
+        <span class="button hide-large xxlarge hover-text-grey" onclick="sidebar_open()"><i
+                class="fa fa-bars"></i></span>
+        <div class="container">
+            <h1><b>Data Browser</b></h1>
+            <div class="bottombar">
+
+            </div>
+        </div>
+    </header>
+    <div class="container">
+        <div class="col-md-5" id="database_container"></div>
+        <div class="col-md-5" id="table_container"></div>
+    </div>
+    <div id="records"></div>
+</div>
+
+
+<script>
+    // Script to open and close sidebar
+    var server = null;
+    var servername = null;
+    var username = null;
+    var password = null;
+    var database_name = null;
+    var table_name = null;
+
+    function sidebar_open() {
+        document.getElementById("mySidebar").style.display = "block";
+        document.getElementById("myOverlay").style.display = "block";
+    }
+
+    function sidebar_close() {
+        document.getElementById("mySidebar").style.display = "none";
+        document.getElementById("myOverlay").style.display = "none";
+    }
+
+    function server_connect(form_id, modal_id) {
+        $('#error_messages').html('').addClass('loader');
+        array = $(form_id).serializeArray();
+        json_form = {};
+        for (i = 0; i < array.length; ++i) {
+            json_form[array[i].name] = array[i].value
+        }
+        server = json_form.server;
+        servername = json_form.servername;
+        username = json_form.username;
+        password = json_form.password;
+        $.post('/', data = $(form_id).serialize(), function (data) {
+            console.log(data);
+            $('#error_messages').removeClass('loader');
+
+            if (data.status === 'ok') {
+                $(modal_id).modal('hide');
+                $('#database_container').html('<div id="databases"><h4><b>Databases</b></h4></div>');
+                for (var i = 0; i < data.databases.length; ++i) {
+                    var db = '<div class="row"><a href="#" onclick="get_table(\'' + data.databases[i] + '\')" id="' + data.databases[i] +
+                        '" class="bar-item button padding text-teal"><i class="fa fa-database fa margin-right"></i>'
+                        + data.databases[i] + '</a></div>';
+                    $('#databases').append(db)
+                }
+            } else {
+                $('#error_messages').html(data);
+            }
+        });
+        return false;
+    }
+
+    function get_table(db_name) {
+        console.log(db_name);
+        database_name = db_name;
+        $.ajax({
+            type: 'GET',
+            url: "/get_table",
+            contentType: 'application/json;charset=UTF-8',
+            data: {
+                server: server,
+                servername: servername,
+                username: username,
+                password: password,
+                db_name: db_name
+            },
+            success: function (response) {
+                console.log(response);
+                $('#table_container').html('<div id="tables"><h4><b>Tables</b></h4></div>');
+                for (var i = 0; i < response.tables.length; ++i) {
+                    var tb = '<div class="row"><a href="#" onclick="get_records(\'' + response.tables[i] + '\')" id="' + response.tables[i] +
+                        '" class="bar-item button padding text-teal"><i class="fa fa-table fa margin-right"></i>'
+                        + response.tables[i] + '</a></div>';
+                    $('#tables').append(tb)
+                }
+            },
+            error: function (error) {
+                console.log(error)
+            }
+        });
+    }
+
+    function get_records(tableName) {
+        table_name = tableName;
+        console.log(tableName)
+        $.ajax({
+            type: 'GET',
+            url: "/get_records",
+            contentType: 'application/json;charset=UTF-8',
+            data: {
+                server: server,
+                servername: servername,
+                username: username,
+                password: password,
+                db_name: database_name,
+                table_name: tableName
+            },
+            success: function (response) {
+                console.log(response);
+                var newDiv = $(document.createElement('div'));
+                newDiv.html(''+response.html_table+'');
+                newDiv.dialog();
+            },
+            error: function (error) {
+                console.log(error)
+            }
+        });
+    }
+</script>
+
+</body>
+
+</html>
