@@ -1,8 +1,8 @@
 import pyodbc
 import pandas as pd
 
-DATABASES_CONNECTORS = {'Microsoft Access': 'pyodbc', 'MySQL': 'pyodbc', 'Oracle': 'pyodbc',
-						'Microsoft SQL Server': 'pyodbc', 'Microsoft Visual FoxPro': 'pyodbc', 'IBM DB2': 'pyodbc'}
+DATABASES_CONNECTORS = {'Microsoft SQL Server': 'pyodbc', 'MySQL': 'pyodbc', 'Oracle': 'pyodbc',
+						'Microsoft Access': 'pyodbc', 'Microsoft Visual FoxPro': 'pyodbc', 'IBM DB2': 'pyodbc'}
 SELECT_QUERIES = {
 	'database': {'Microsoft SQL Server': "SELECT [name] as Database_Name FROM sys.databases"},
 	'schemas': {'Microsoft SQL Server': '''SELECT [name] as [Schema_Name] FROM sys.schemas WHERE [schema_id] IN (
